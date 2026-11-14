@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#e78b43">
+<title>MoneyIpon | Personal Finance</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&amp;display=swap">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.3.0/firebase-app.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.3.0/firebase-firestore.js">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="splash" role="status">
+    <img class="logo-img splash-logo" alt="">
+    <h1>MoneyIpon</h1>
+    <p>Loading your ipon…</p>
+    <div class="splash-bar"><i></i></div>
+</div>
+
+<div id="authScreen" class="auth-screen hidden">
+    <div class="auth-card">
+        <img class="logo logo-img" alt="MoneyIpon">
+        <h1>MoneyIpon</h1>
+        <p class="muted">Your money. Your goals. Your future.</p>
+        <div class="auth-tabs">
+            <button id="loginTab" class="active" type="button">Login</button>
+            <button id="signupTab" type="button">Sign Up</button>
+        </div>
+        <form id="authForm">
+            <input id="nameInput" placeholder="Full name" class="signup-only hidden" autocomplete="name">
+            <input id="emailInput" type="email" placeholder="Email address" required autocomplete="email">
+            <input id="passwordInput" type="password" placeholder="Password" required minlength="6" autocomplete="current-password">
+            <button type="submit" id="authSubmit" class="primary-btn">Login</button>
+        </form>
+        <p id="authMessage" class="message" aria-live="polite"></p>
+        <button id="forgotBtn" class="link-btn" type="button">Forgot password?</button>
+        <div class="separator">OR</div>
+        <button id="googleBtn" class="social-btn" type="button">Continue with Google</button>
+    </div>
+</div>
+
+<div id="appScreen" class="hidden">
+    <aside class="sidebar">
+        <div class="brand"><img class="logo-img" alt=""><span>MoneyIpon</span></div>
+        <nav>
+            <button class="nav-btn active" data-page="overview"><span class="ni">🏠</span><span>Home</span></button>
+            <button class="nav-btn" data-page="transactions"><span class="ni">↔️</span><span>Activity</span></button>
+            <button class="nav-btn" data-page="budgets"><span class="ni">📊</span><span>Budgets</span></button>
+            <button class="nav-btn" data-page="goals"><span class="ni">🐷</span><span>Goals</span></button>
+            <button class="nav-btn" data-page="utang"><span class="ni">🤝</span><span>Utang</span></button>
+            <button class="nav-btn" data-page="reports"><span class="ni">📈</span><span>Reports</span></button>
+            <button class="nav-btn" data-page="pro"><span class="ni">⭐</span><span>Pro</span></button>
+            <button class="nav-btn" data-page="settings"><span class="ni">⚙️</span><span>Settings</span></button>
+            <button class="nav-btn" data-page="about"><span class="ni">ℹ️</span><span>About</span></button>
+        </nav>
+        <button class="logout-btn js-logout">↪ Logout</button>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <h2 id="pageTitle">Home</h2>
+                <p class="muted" id="welcomeText">Welcome to MoneyIpon!</p>
+            </div>
+            <div class="profile">
+                <span id="userName">User</span>
+                <img id="userPhoto" alt="Profile">
+            </div>
+        </header>
+
+        <div id="periodBar" class="period-bar">
+            <button class="round-btn" data-act="shift" data-dir="-1" aria-label="Previous period">‹</button>
+            <strong id="periodLabel"></strong>
+            <button class="round-btn" data-act="shift" data-dir="1" aria-label="Next period">›</button>
+        </div>
+
+        <section id="overview" class="page">
+            <div class="hero">
+                <small id="safeLabel">Safe to spend today</small>
+                <div class="hero-big" id="safeValue">₱0</div>
+                <p id="safeSub"></p>
+                <p class="nudge" id="nudge"></p>
+            </div>
+
+            <div class="panel jar-panel">
+                <div id="jar" class="jar"></div>
+                <div>
+                    <h3>My Alkansya</h3>
+                    <p id="jarText" class="muted"></p>
+                    <button id="shareBtn" class="primary-btn" type="button">Share my ipon</button>
+                </div>
+            </div>
+
+            <div class="cards">
+                <div class="stat-card"><p>Balance (all time)</p><h2 id="balance">₱0.00</h2></div>
+                <div class="stat-card"><p>Income</p><h2 id="income">₱0.00</h2></div>
+                <div class="stat-card"><p>Spent</p><h2 id="expenses">₱0.00</h2></div>
+                <div class="stat-card"><p>Ipon this period</p><h2 id="totalSavings">₱0.00</h2></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-heading">
+                    <h3>Recent activity</h3>
+                    <button class="small-btn" data-goto="transactions">View all</button>
+                </div>
+                <div id="recentTransactions"></div>
+            </div>
+        </section>
+
+        <section id="transactions" class="page hidden">
+            <div class="panel">
+                <h3>Add transaction</h3>
+                <form id="transactionForm" class="form-grid">
+                    <select id="transactionType" aria-label="Type">
+                        <option value="expense">Expense</option>
+                        <option value="income">Income</option>
+                    </select>
+                    <div>
+                        <input id="transactionAmount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="Amount (₱)" required>
+                        <div class="chips">
+                            <button type="button" data-act="chip" data-v="20">+20</button>
+                            <button type="button" data-act="chip" data-v="50">+50</button>
+                            <button type="button" data-act="chip" data-v="100">+100</button>
+                            <button type="button" data-act="chip" data-v="500">+500</button>
+                        </div>
+                    </div>
+                    <input id="transactionTitle" placeholder="Description (e.g. Jollibee, Grab, Meralco)" required maxlength="60">
+                    <div>
+                        <select id="transactionCategory" aria-label="Category"></select>
+                        <small id="catHint" class="muted"></small>
+                    </div>
+                    <input id="transactionDate" type="date" required>
+                    <button class="primary-btn" type="submit">Add transaction</button>
+                </form>
+            </div>
+            <div class="panel">
+                <h3>Transaction history</h3>
+                <input id="transactionSearch" placeholder="Search transactions…">
+                <div id="transactionList"></div>
+            </div>
+        </section>
+
+        <section id="budgets" class="page hidden">
+            <div class="panel">
+                <h3>Budget plan</h3>
+                <p class="muted tip">Each budget is the limit for one pay period, so set it for the period you chose in Settings.</p>
+                <form id="budgetForm" class="form-grid">
+                    <select id="budgetCategory"></select>
+                    <input id="budgetAmount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="Budget amount (₱)" required>
+                    <button class="primary-btn">Save budget</button>
+                </form>
+            </div>
+            <div class="panel">
+                <h3>Your budgets</h3>
+                <div id="budgetList"></div>
+            </div>
+        </section>
+
+        <section id="goals" class="page hidden">
+            <div class="panel">
+                <h3>Create savings goal</h3>
+                <form id="goalForm" class="form-grid">
+                    <input id="goalName" placeholder="Goal name (e.g. Emergency fund)" required maxlength="40">
+                    <input id="goalTarget" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="Target amount (₱)" required>
+                    <input id="goalSaved" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Already saved (₱)" value="0">
+                    <input id="goalDate" type="date" aria-label="Target date">
+                    <button class="primary-btn">Create goal</button>
+                </form>
+            </div>
+            <div class="panel">
+                <h3>Your goals</h3>
+                <p class="muted tip">Adding savings here is recorded as ipon and deducted from your balance.</p>
+                <div id="goalList"></div>
+            </div>
+        </section>
+
+        <section id="utang" class="page hidden">
+            <div class="panel">
+                <h3>Utang tracker</h3>
+                <div id="debtSummary"></div>
+            </div>
+            <div class="panel">
+                <h3>Add utang</h3>
+                <form id="debtForm" class="form-grid">
+                    <input id="debtPerson" placeholder="Person’s name" required maxlength="40">
+                    <input id="debtAmount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="Amount (₱)" required>
+                    <select id="debtDir">
+                        <option value="toMe">They owe me</option>
+                        <option value="iOwe">I owe them</option>
+                    </select>
+                    <input id="debtNote" placeholder="Note (optional)" maxlength="60">
+                    <button class="primary-btn">Add utang</button>
+                </form>
+            </div>
+            <div class="panel"><div id="debtList"></div></div>
+        </section>
+
+        <section id="reports" class="page hidden">
+            <div class="cards three">
+                <div class="stat-card"><p>Income</p><h2 id="reportIncome">₱0.00</h2></div>
+                <div class="stat-card"><p>Expenses</p><h2 id="reportExpenses">₱0.00</h2></div>
+                <div class="stat-card"><p>Net after expenses</p><h2 id="reportNet">₱0.00</h2></div>
+            </div>
+            <div class="panel">
+                <h3>Expense breakdown</h3>
+                <div id="expenseBreakdown"></div>
+            </div>
+            <div class="panel">
+                <h3>Export your data</h3>
+                <div class="btn-row">
+                    <button id="csvBtn" class="primary-btn">Download CSV</button>
+                    <button id="jsonBtn" class="small-btn">Download JSON backup</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="pro" class="page hidden">
+            <div class="panel">
+                <h3>MoneyIpon Pro <span class="badge">Coming soon</span></h3>
+                <p class="muted">Tracking, budgets, goals and utang stay free. Pro will add extras for people who want more.</p>
+                <ul class="pro-list">
+                    <li>Receipt and GCash screenshot scanning</li>
+                    <li>Recurring bills and reminders</li>
+                    <li>Shared household budgets</li>
+                    <li>Unlimited goals and yearly reports</li>
+                </ul>
+                <button id="proBtn" class="primary-btn" type="button">Notify me when Pro launches</button>
+            </div>
+        </section>
+
+        <section id="settings" class="page hidden">
+            <div class="panel">
+                <h3>Account</h3>
+                <p>Email: <strong id="settingsEmail"></strong></p>
+                <p>Sign-in method: <strong id="settingsProvider"></strong></p>
+                <p class="muted" id="syncStatus"></p>
+                <button class="danger-btn js-logout">Logout</button>
+            </div>
+            <div class="panel">
+                <h3>Budget period</h3>
+                <select id="cycleSelect">
+                    <option value="month">Whole month (1st to end of month)</option>
+                    <option value="half">Kinsenas / Katapusan (1–15 and 16–end)</option>
+                </select>
+            </div>
+            <div class="panel">
+                <h3>Install app</h3>
+                <p class="muted">Add MoneyIpon to your home screen to use it like an app, even offline.</p>
+                <button id="installBtn" class="primary-btn hidden">Install MoneyIpon</button>
+                <p class="muted" id="installHint">On iPhone, tap Share, then “Add to Home Screen”. On Android, use your browser menu.</p>
+            </div>
+            <div class="panel">
+                <h3>Data management</h3>
+                <p>Your records are saved on this device and synced to your account.</p>
+                <button id="clearDataBtn" class="danger-btn">Clear financial data</button>
+            </div>
+        </section>
+
+        <section id="about" class="page hidden">
+            <div class="panel">
+                <h2>About MoneyIpon</h2>
+                <p>MoneyIpon is a personal finance app that helps you track expenses, plan budgets, and build the habit of saving.</p>
+                <h3>Our mission</h3>
+                <p>To empower individuals to make smarter financial decisions through accessible and practical digital tools.</p>
+                <h3>Developed by</h3>
+                <p>TechDro</p>
+                <p>Facebook: <a href="https://www.facebook.com/profile.php?id=61575867604775" target="_blank" rel="noopener">Visit Facebook</a></p>
+                <p>LinkedIn: <a href="https://www.linkedin.com/in/techdro" target="_blank" rel="noopener">Visit LinkedIn</a></p>
+                <p class="muted">MoneyIpon © 2026. All rights reserved.</p>
+            </div>
+        </section>
+    </main>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+setTimeout(function(){var s=document.getElementById('splash');if(s&&!s.dataset.done){s.querySelector('p').textContent='Taking longer than usual. Check your internet connection.'}},8000);
+</script>
+<script type="module" src="script.js"></script>
+</body>
+</html>
